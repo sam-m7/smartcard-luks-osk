@@ -1,0 +1,88 @@
+#!/bin/sh
+
+# Modified version of Debians /usr/lib/cryptsetup/scripts/decrypt_gnupg-sc keyscript (https://packages.debian.org/buster/cryptsetup) version 2:2.1.0-5+deb10u2 to use osk-sdl (https://packages.debian.org/bullseye/osk-sdl)
+
+# Copyright: (c) 2005-2015 Jonas Meurer <jonas@freesources.org>
+#           (c) 2016-2018 Guilhem Moulin <guilhem@debian.org>
+#           (c) 2009,2014 Peter Lebbing <peter@digitalbrains.com>
+#           (c) 2018 Erik Nellessen
+#	    (c) 2021 Samuel Mueller
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# 
+# On Debian systems, the complete text of the GNU General Public
+# License v2 can be found in `/usr/share/common-licenses/GPL-2'.
+
+
+export SDL_VIDEODRIVER=kmsdrm
+plymouth hide-splash 2>/dev/null
+
+if [ -d "/cryptroot/gnupghome" ]; then
+    export GNUPGHOME="/cryptroot/gnupghome"
+fi
+
+run_gpg() {
+    gpg --no-options --trust-model=always "$@"
+}
+
+decrypt_gpg () {
+    local console _
+    if ! GPG_TTY="$(tty)"; then
+        read console _ </proc/consoles
+        GPG_TTY="/dev/$console"
+    fi
+    export GPG_TTY
+
+    if ! exec /usr/bin/osk-sdl -v -k -d "${CRYPTTAB_SOURCE}" -n "${CRYPTTAB_NAME}" -c /etc/osk.conf | gpg --no-options --trust-model=always --batch --pinentry-mode loopback --passphrase-fd 0 --decrypt -- "$1"; then
+        return 1
+    fi
+    return 0
+}
+
+if [ ! -x /usr/bin/gpg ]; then
+    echo "$0: /usr/bin/gpg is not available" >&2
+    exit 1
+fi
+
+if [ -z "$1" ] || [ ! -f "$1" ]; then
+    echo "$0: missing key as argument" >&2
+    exit 1
+fi
+
+sc_available=0
+time_count=0
+while [ $sc_available -ne 1 ]; do
+    if run_gpg --batch --quiet --no-tty --card-status >/dev/null
+    then
+	sc_available=1
+    else
+	if [ $time_count -gt 90 ]
+	then
+	    echo "Using fallback and just forwarding keyboard output..." >&2
+	    exec /usr/bin/osk-sdl -v -k -d "${CRYPTTAB_SOURCE}" -n "${CRYPTTAB_NAME}" -c /etc/osk.conf
+	    plymouth show-splash 2>/dev/null
+	    exit 0
+	else
+	    echo "Please insert OpenPGP SmartCard..." >&2
+	    sleep 1
+	fi
+	time_count=$((time_count+1))
+    fi
+done
+
+decrypt_gpg "$1"
+myRet=$?
+plymouth show-splash 2>/dev/null
+exit $myRet

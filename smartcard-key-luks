@@ -1,14 +1,20 @@
 #!/bin/sh
 
 # Copyright (c) 2019 Purism SPC
+# Changes (c) 2021 by Samuel Mueller
 
 PUBKEY=$1
+MY_DEVICE=$2
 TMPDIR=`mktemp --tmpdir=/dev/shm --directory`
 TMPKEY="${TMPDIR}/tmpkey"
 GNUPGHOME="${TMPDIR}"
 CRYPTHOME="/etc/cryptsetup-initramfs"
 ROOT_DEV=""
 ROOT_DEV_FULL=""
+GNUPGSC_HOOK="/usr/share/initramfs-tools/hooks/cryptgnupg-sc"
+GNUPGSC_OSK_HOOK="${GNUPGSC_HOOK}-osk"
+GNUPGSC_SCRIPT="/lib/cryptsetup/scripts/decrypt_gnupg-sc"
+GNUPGSC_OSK_SCRIPT="${GNUPGSC_SCRIPT}-osk"
 
 . /lib/cryptsetup/functions
 
@@ -54,7 +60,14 @@ if dpkg-query -l 'scdaemon' | egrep -q '^ii'; then
   echo "scdaemon installed"
 else
   echo "ERROR: scdaemon package not installed. The scdaemon package is required to access the OpenPGP smart card"
-  exit 1
+  echo "Trying to install it now..."
+  if apt update && apt install -y scdaemon
+  then
+      echo "Installed scdaemon successfully"
+  else
+      echo "Couldn't install scdaemon"
+      exit 1
+  fi
 fi
   
 chmod 700 $GNUPGHOME
@@ -111,23 +124,45 @@ else
   shred -u ${TMPKEY}
 fi
 
+#Add initramfs hook
+cp "${GNUPGSC_HOOK}" "${GNUPGSC_OSK_HOOK}"
+if sed -i "s/decrypt_gnupg-sc/decrypt_gnupg-sc-osk/g" "${GNUPGSC_OSK_HOOK}"
+then
+  echo "Created ${GNUPGSC_OSK_HOOK} successfully"
+else
+  echo "Problems creating ${GNUPGSC_OSK_HOOK}"
+  exit 2
+fi
+
+#Adding new cryptsetup script
+if cp files/decrypt_gnupg-sc-osk "${GNUPGSC_OSK_SCRIPT}" && chmod 755 "${GNUPGSC_OSK_SCRIPT}"
+then
+  echo "Created ${GNUPGSC_OSK_SCRIPT} successfully"
+else
+  echo "Problems creating ${GNUPGSC_OSK_SCRIPT}"
+  exit 2
+fi
+
+#Load Pinephone USB-C Kernel module in initramfs
+if ! grep "^anx7688" /etc/initramfs-tools/modules >/dev/null
+then
+  if [ "${MY_DEVICE}" = "pinephone" ] || [ "${MY_DEVICE}" = "Pinephone" ] || [ "${MY_DEVICE}" = "PinePhone" ] || [ "${MY_DEVICE}" = "PP" ] || [ "${MY_DEVICE}" = "pp" ]
+  then
+      echo "anx7688" >> /etc/initramfs-tools/modules
+      echo "Added anx7688 to /etc/initramfs-tools/modules to support USB-C in the initramfs on the PinePhone"
+  else
+      echo "Pinephone parameter not given, not adding kernel module anx7688 (for the USB-C controller of the PinePhone) to /etc/initramfs-tools/modules"
+      echo "Make sure the module is loaded in the initramfs kernel if you want to use the USB-C port to connect a smart-card"
+  fi
+fi
+
 crypttab_find_entry $ROOT_LUKS
 if [ "${CRYPTHOME}/cryptkey.gpg" = "$CRYPTTAB_KEY" ]; then
   echo "/etc/crypttab already updated, skipping"
 else
-  cat /etc/crypttab | sed "s|^$ROOT_LUKS .*|$ROOT_LUKS $ROOT_DEV ${CRYPTHOME}/cryptkey.gpg ${CRYPTTAB_OPTIONS},keyscript=decrypt_gnupg-sc|" > /etc/crypttab.tmp
+  CRYPTTAB_OPTIONS="${CRYPTTAB_OPTIONS%',keyscript='*}"
+  cat /etc/crypttab | sed "s|^$ROOT_LUKS .*|$ROOT_LUKS $ROOT_DEV ${CRYPTHOME}/cryptkey.gpg ${CRYPTTAB_OPTIONS},keyscript=decrypt_gnupg-sc-osk|" > /etc/crypttab.tmp
   mv /etc/crypttab.tmp /etc/crypttab
 fi
 
 update-initramfs -u
-
-# patch grub config files
-perl -pi -e 's/^GRUB_CMDLINE_LINUX_DEFAULT=(.*) splash/GRUB_CMDLINE_LINUX_DEFAULT=\1 nosplash noresume loglevel=3/' /etc/default/grub
-echo "GRUB_CMDLINE_LINUX_RECOVERY=\"cryptopts=target=$ROOT_LUKS,source=$ROOT_DEV,luks\"" >> /etc/default/grub
-
-# temporary script patches until they are upstreamed
-perl -pi -e 's/GRUB_CMDLINE_LINUX_RECOVERY=recovery/GRUB_CMDLINE_LINUX_RECOVERY=\"\$GRUB_CMDLINE_LINUX_RECOVERY recovery\"/' /etc/grub.d/10_linux
-perl -pi -e 's/GRUB_CMDLINE_LINUX_RECOVERY=single/GRUB_CMDLINE_LINUX_RECOVERY=\"\$GRUB_CMDLINE_LINUX_RECOVERY single\"/' /etc/grub.d/10_linux
-perl -pi -e 's/GRUB_CMDLINE_LINUX_DEFAULT \\/GRUB_CMDLINE_LINUX_DEFAULT \\\n  GRUB_CMDLINE_LINUX_RECOVERY \\/' /usr/sbin/grub-mkconfig
-
-update-grub
