@@ -1,7 +1,7 @@
 # smartcard-luks-osk
 
 OpenPGP smartcard setup with Linux boot for the PinePhone with Mobian (Librem 5 with PureOS might also work).
-This is a modified version of the Luks GPG encryption configuration Script from Purism (https://source.puri.sm/pureos/packages/smartcard-key-luks). This version is extended to replace the standard decrypt_gnupg-sc keyscript and use acustom version of the keyscript that integrates the osk by Postmarket OS (https://gitlab.com/postmarketOS/osk-sdl).
+This is a modified version of the Luks GPG encryption configuration Script from Purism (https://source.puri.sm/pureos/packages/smartcard-key-luks). This version is extended to replace the standard decrypt_gnupg-sc keyscript and use a custom version of the keyscript that integrates the osk by Postmarket OS (https://gitlab.com/postmarketOS/osk-sdl).
 The modified keyscript (files/decrypt_gnupg-sc-osk) will try to use the smartcard for around 90 secondes. After that the keyboard will be shown too, but the output is then directly forwarded without first going through gpg. If you still have a Luks keyslot with a normal passphrase, this can be used as a fallback, as every keyslot will be checked. If you get the on screen keyboard before 90 seconds are over, this means the smartcard was detected and you need to provide your pin for the gpg key and not a passphrase for a different Luks keyslot.
 
 ## Notes
