@@ -26,6 +26,12 @@ fi
 
 # Discover the root LUKS device
 ROOT_LUKS=`grep -v '^#' /etc/fstab | col | egrep '[[:space:]]+\/[[:space:]]+' | cut -f1 -d ' '| sed 's/\/dev\/mapper\///'`
+case $ROOT_LUKS in
+UUID=*)
+  UUID=`echo $ROOT_LUKS | cut -f2 -d '='`
+  ROOT_LUKS=`blkid -U $UUID | sed 's/\/dev\/mapper\///'`
+  ;;
+esac
 crypttab_find_entry $ROOT_LUKS
 ROOT_DEV=$CRYPTTAB_SOURCE
 
@@ -153,6 +159,18 @@ then
   else
       echo "Pinephone parameter not given, not adding kernel module anx7688 (for the USB-C controller of the PinePhone) to /etc/initramfs-tools/modules"
       echo "Make sure the module is loaded in the initramfs kernel if you want to use the USB-C port to connect a smart-card"
+  fi
+fi
+
+# Configure Librem 5 internal smart card reader if present
+if [ -f /sys/class/leds/smc_en_brightness ]; then
+  if [ "${MY_DEVICE}" = "librem5" ] || [ "${MY_DEVICE}" = "Librem5" ] || [ "${MY_DEVICE}" = "Librem 5" ] || [ "${MY_DEVICE}" = "librem 5" ] || [ "${MY_DEVICE}" = "l5" ]
+  then
+		cp "files/cryptgnupg-sc-osk-hook" "${GNUPGSC_OSK_HOOK}" && chmod 755 "${GNUPGSC_OSK_HOOK}"
+		cp "files/cryptgnupg-sc-osk-script" "/usr/share/initramfs-tools/scripts/local-top/cryptgnupg-sc-osk" && chmod 755 "/usr/share/initramfs-tools/scripts/local-top/cryptgnupg-sc-osk"
+    echo "Configured internal Librem 5 smart card reader"
+  else
+		echo "Librem5 parameter not given, not configuring internal smart card reader"
   fi
 fi
 

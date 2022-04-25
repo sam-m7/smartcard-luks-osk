@@ -1,6 +1,6 @@
 # smartcard-luks-osk
 
-OpenPGP smartcard setup with Linux boot for the PinePhone with Mobian (Librem 5 with PureOS might also work).
+OpenPGP smartcard setup with Linux boot for the PinePhone with Mobian (Librem 5 with PureOS also also works).
 This is a modified version of the Luks GPG encryption configuration Script from Purism (https://source.puri.sm/pureos/packages/smartcard-key-luks). This version is extended to replace the standard decrypt_gnupg-sc keyscript and use a custom version of the keyscript that integrates the osk by Postmarket OS (https://gitlab.com/postmarketOS/osk-sdl).
 The modified keyscript (files/decrypt_gnupg-sc-osk) will try to use the smartcard for around 90 secondes. After that the keyboard will be shown too, but the output is then directly forwarded without first going through gpg. If you still have a Luks keyslot with a normal passphrase, this can be used as a fallback, as every keyslot will be checked. If you get the on screen keyboard before 90 seconds are over, this means the smartcard was detected and you need to provide your pin for the gpg key and not a passphrase for a different Luks keyslot.
 
@@ -23,7 +23,9 @@ I noticed some problems with the recognition of my USB smartcard. Based on the l
 1. cd into the folder of the repository
 2. ./smartcard-luks-osk "your public key (file)" "device name"
 
-For now there is only the pinephone. You can hand over "pinephone" or "pp" as device values. This will ensure the anx7688 kernel module (USB-C port controller) will be loaded in the initramfs.
+For now there are two device options:
+"pinephone" or "pp" will ensure the anx7688 kernel module (USB-C port controller) will be loaded in the initramfs.
+"librem5" or "l5" will ensure the internal Librem 5 smart card reader is enabled
 
 ## Steps the script performs
 
@@ -33,7 +35,8 @@ For now there is only the pinephone. You can hand over "pinephone" or "pp" as de
 5. Creating new initramfs hook (/usr/share/initramfs-tools/hooks/cryptgnupg-sc-osk)
 6. Copying new keyscript to /lib/cryptsetup/scripts/decrypt_gnupg-sc-osk
 7. Adding anx7688 to /etc/initramfs-tools/modules if device is pinephone
-8. Adding keyfile to crypttab, replacing keyscript entry in crypttab
+8. Adding extra hooks and scripts to /usr/share/initramfs-tools/ if device is Librem 5
+9. Adding keyfile to crypttab, replacing keyscript entry in crypttab
 
 ## License
 
