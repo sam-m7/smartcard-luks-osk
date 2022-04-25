@@ -166,11 +166,11 @@ fi
 if [ -f /sys/class/leds/smc_en_brightness ]; then
   if [ "${MY_DEVICE}" = "librem5" ] || [ "${MY_DEVICE}" = "Librem5" ] || [ "${MY_DEVICE}" = "Librem 5" ] || [ "${MY_DEVICE}" = "librem 5" ] || [ "${MY_DEVICE}" = "l5" ]
   then
-		cp "files/cryptgnupg-sc-osk-hook" "${GNUPGSC_OSK_HOOK}" && chmod 755 "${GNUPGSC_OSK_HOOK}"
-		cp "files/cryptgnupg-sc-osk-script" "/usr/share/initramfs-tools/scripts/local-top/cryptgnupg-sc-osk" && chmod 755 "/usr/share/initramfs-tools/scripts/local-top/cryptgnupg-sc-osk"
+    cp "files/cryptgnupg-sc-osk-hook" "${GNUPGSC_OSK_HOOK}" && chmod 755 "${GNUPGSC_OSK_HOOK}"
+    cp "files/cryptgnupg-sc-osk-script" "/usr/share/initramfs-tools/scripts/local-top/cryptgnupg-sc-osk" && chmod 755 "/usr/share/initramfs-tools/scripts/local-top/cryptgnupg-sc-osk"
     echo "Configured internal Librem 5 smart card reader"
   else
-		echo "Librem5 parameter not given, not configuring internal smart card reader"
+    echo "Librem5 parameter not given, not configuring internal smart card reader"
   fi
 fi
 
