@@ -163,7 +163,7 @@ then
 fi
 
 # Configure Librem 5 internal smart card reader if present
-if [ -f /sys/class/leds/smc_en_brightness ]; then
+if [ -f /sys/class/leds/smc_en/brightness ]; then
   if [ "${MY_DEVICE}" = "librem5" ] || [ "${MY_DEVICE}" = "Librem5" ] || [ "${MY_DEVICE}" = "Librem 5" ] || [ "${MY_DEVICE}" = "librem 5" ] || [ "${MY_DEVICE}" = "l5" ]
   then
     cp "files/cryptgnupg-sc-osk-hook" "${GNUPGSC_OSK_HOOK}" && chmod 755 "${GNUPGSC_OSK_HOOK}"
