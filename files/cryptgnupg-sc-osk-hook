@@ -82,17 +82,11 @@ mkdir -p -- "$DESTDIR/etc/opensc" "$DESTDIR/usr/lib/pcsc" "$DESTDIR/var/run" "$D
 copy_exec /usr/sbin/pcscd
 
 cp -rt "$DESTDIR/usr/lib" /usr/lib/pcsc
-cp -t "$DESTDIR/etc" /etc/reader.conf || true
 cp -rt "$DESTDIR/etc" /etc/reader.conf.d || true
 cp -t "$DESTDIR/etc" /etc/libccid_Info.plist
 
 for so in $(ldconfig -p | sed -nr 's/^\s*(libusb-[0-9.-]+|libpcsclite)\.so\.[0-9]+\s.*=>\s*//p'); do
     copy_exec "$so"
 done
-
-# Install opensc commands and conf file
-copy_exec /usr/bin/opensc-tool
-copy_exec /usr/bin/pkcs15-crypt
-cp -t "$DESTDIR/etc/opensc" /etc/opensc/opensc.conf
 
 exit $RV
