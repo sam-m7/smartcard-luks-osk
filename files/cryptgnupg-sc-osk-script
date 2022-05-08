@@ -1,0 +1,24 @@
+#!/bin/sh
+
+set -e
+
+PREREQ=""
+
+prereqs()
+{
+    echo "$PREREQ"
+}
+
+case $1 in
+    prereqs)
+        prereqs
+        exit 0
+        ;;
+esac
+
+if [ ! -f /sys/class/leds/smc_en/brightness ]; then
+    exit 0
+fi
+
+# Initialize Librem 5 smart card reader
+echo 1 > /sys/class/leds/smc_en/brightness && sleep 5
