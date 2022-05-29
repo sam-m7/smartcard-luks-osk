@@ -40,4 +40,4 @@ For now there are two device options:
 
 ## License
 
-Unless otherwise stated in the source files themself, the code is licensed under the license given in the LICENSE file within the main directory of the repository (LGPLv3). 
+Unless otherwise stated in the source files themself, the code is licensed under the license given in the LICENSE file within the main directory of the repository (LGPLv3).

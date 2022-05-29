@@ -1,13 +1,10 @@
 #!/bin/sh
 
-# Modified version of Debians /usr/lib/cryptsetup/scripts/decrypt_gnupg-sc keyscript (https://packages.debian.org/buster/cryptsetup) version 2:2.1.0-5+deb10u2 to use osk-sdl (https://packages.debian.org/bullseye/osk-sdl)
-
-# Copyright: (c) 2005-2015 Jonas Meurer <jonas@freesources.org>
-#           (c) 2016-2018 Guilhem Moulin <guilhem@debian.org>
-#           (c) 2009,2014 Peter Lebbing <peter@digitalbrains.com>
-#           (c) 2018 Erik Nellessen
-#	    (c) 2021 Samuel Mueller
-
+# Modified version of Debians /usr/lib/cryptsetup/scripts/decrypt_gnupg-sc keyscript provided by the cryptsetup package (https://packages.debian.org/bookworm/cryptsetup) version 2:2.4.3-1 to use osk-sdl (https://packages.debian.org/bullseye/osk-sdl)
+# This file was provided by the smartcard-luks-osk script and is not part of the debian cryptsetup package
+#
+# Copyright: Please check the associated Debian copyright file of the cryptsetup package. Modifications by Samuel Mueller.
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
